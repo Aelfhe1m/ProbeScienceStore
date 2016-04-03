@@ -17,42 +17,78 @@ namespace ProbeScienceStore
         [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Gather available science")]
         public void GatherScience()
         {
+            var info = new StringBuilder();
             try
             {
                 var containers = part.FindModulesImplementing<IScienceDataContainer>();
-                // Print($"Debug - found {containers.Count} ScienceDataContainers in current part");
+                info.Append($"Debug - found {containers.Count} ScienceDataContainers in current part\n");
+                if (containers.Count > 0)
+                {
+                    for (int i = 0; i < containers.Count; i++)
+                    {
+                        info.Append($"    [{i}]: {containers[i].GetType()}\n");
+                    }
+                }
                 var experimentModules = FlightGlobals.ActiveVessel.FindPartModulesImplementing<ModuleScienceExperiment>();
-                // Print($"Debug - found {experimentModules.Count} experiments in vessel.");
+                info.Append($"Debug - found {experimentModules.Count} experiments in vessel.\n");
+                if (experimentModules.Count > 0)
+                {
+                    for (int i = 0; i < experimentModules.Count; i++)
+                    {
+                        info.Append($"    [{i}]: {experimentModules[i].GetType()}\n");
+                    }
+                }
 
                 if (containers.Count < 1)
                 {
+                    Print(info.ToString());
                     Print("ModuleScienceExperiment not found in current part.");
                     return;
                 }
-                var container = containers[0]; // always store data in first datacontainer found if there are multiples
 
+                ModuleScienceContainer container = null;
+                int c = 0;
+                while (container == null && c < containers.Count)
+                {
+                    container = containers[c] as ModuleScienceContainer;
+                    c++;
+                }
+                
                 if (experimentModules.Count < 1)
+                {
+                    Print(info.ToString());
+                    Print("No experiment found.");
                     return; // no experiments to collect
+                }
 
                 foreach (var module in experimentModules)
                 {
                     var science = ((IScienceDataContainer)module).GetData();
                     if (science != null && science.Length > 0)
                     {
-                        // Print($"Found {science.Sum(s => s.dataAmount)} science in {module.GUIName}");
-                        if (((ModuleScienceContainer)container).StoreData(new List<IScienceDataContainer> { (IScienceDataContainer)module}, false))
+                        
+                        info.Append($"Found {science.Sum(s => s.dataAmount)} science in {module.name}\n");
+                        var isdcModule = (IScienceDataContainer)module;
+                        info.Append("Cast to IScienceDataContainer OK.");
+
+                        if (container.StoreData(new List<IScienceDataContainer> { isdcModule }, false))
                         {
-                            //Print($"{module.GUIName} Dumping and reseting");
-                            foreach (var data in science) ((IScienceDataContainer)module).DumpData(data);
+                            info.Append($"{module.name} Dumping\n");
+                            foreach (var data in science) isdcModule.DumpData(data);
+
+                            info.Append($"{module.name} Reseting\n");
                             ((ModuleScienceExperiment)module).ResetExperiment();
-                            //Print($"{module.GUIName} OK.");
+
+                            info.Append($"{module.name} OK.\n");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Print($"Exception in GatherScience:  Error:  {ex.Message}\n{ex.StackTrace}");
+                Print(info.ToString());
+                Debug.LogException(ex);
+                // Print($"Exception in GatherScience:  Error:  {ex.Message}\n{ex.StackTrace}");
             }
         }
         #endregion
@@ -64,7 +100,7 @@ namespace ProbeScienceStore
 
         public void Print(string message)
         {
-            Debug.Log("[ProbeScienceStore] " + message);
+            Debug.Log("[ProbeScienceStore] {\n" + message + "}");
         }
     }
 }

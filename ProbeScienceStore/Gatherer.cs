@@ -83,6 +83,7 @@ namespace ProbeScienceStore
                         }
                     }
                 }
+                Print(info.ToString());
             }
             catch (Exception ex)
             {

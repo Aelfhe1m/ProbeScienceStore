@@ -10,12 +10,12 @@ namespace ProbeScienceStore
     {
         public override string GetInfo()
         {
-            return "This part allows science data from other parts of the vessel to be gathered into the probe's science container.";
+            return "This part allows science data from other parts of the vessel to be retrieved into the probe's science container.";
         }
 
         #region Actions and Events
-        [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Gather available science")]
-        public void GatherScience()
+        [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "Retrieve science")]
+        public void RetrieveScienceEvent()
         {
             var info = new StringBuilder();
             try
@@ -88,8 +88,13 @@ namespace ProbeScienceStore
             {
                 Print(info.ToString());
                 Debug.LogException(ex);
-                // Print($"Exception in GatherScience:  Error:  {ex.Message}\n{ex.StackTrace}");
             }
+        }
+
+        [KSPAction("Retrieve science")]
+        public void RetrieveScienceAction()
+        {
+            RetrieveScienceEvent();
         }
         #endregion
 
